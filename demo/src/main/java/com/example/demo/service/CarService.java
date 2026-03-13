@@ -2,7 +2,10 @@ package com.example.demo.service;
 
 import com.example.demo.entity.Car;
 import com.example.demo.repository.CarRepository;
+import com.example.demo.repository.PaymentRepository;
+import com.example.demo.repository.RideRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,9 +13,14 @@ import java.util.Optional;
 @Service
 public class CarService {
     private final CarRepository carRepository;
+    private final RideRepository rideRepository;
+    private final PaymentRepository paymentRepository;
 
-    public CarService(CarRepository carRepository) {
+    public CarService(CarRepository carRepository, RideRepository rideRepository,
+                      PaymentRepository paymentRepository) {
         this.carRepository = carRepository;
+        this.rideRepository = rideRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     public Car createCar(Car car) {
@@ -46,11 +54,21 @@ public class CarService {
                 });
     }
 
+    @Transactional
     public boolean deleteCar(Long id) {
-        if (carRepository.existsById(id)) {
-            carRepository.deleteById(id);
-            return true;
+        if (!carRepository.existsById(id)) {
+            return false;
         }
-        return false;
+        return carRepository.findById(id)
+                .map(car -> {
+                    var rides = rideRepository.findByCar_Id(id);
+                    if (!rides.isEmpty()) {
+                        paymentRepository.deleteByRideIn(rides);
+                        rideRepository.deleteAll(rides);
+                    }
+                    carRepository.delete(car);
+                    return true;
+                })
+                .orElse(false);
     }
 }

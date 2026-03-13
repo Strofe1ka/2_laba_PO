@@ -1,7 +1,7 @@
-# Лабораторная работа №3 — Carsharing API
+# Лабораторная работа №4 — Carsharing API
 
-**Предмет:** PO3  
-**Тема:** REST API для системы каршеринга (Spring Boot, PostgreSQL, JPA)
+**Предмет:** PO4  
+**Тема:** REST API каршеринга — Spring Boot, PostgreSQL, JPA, Spring Security, CSRF, Basic Auth
 
 ## Структура проекта
 
@@ -12,9 +12,14 @@
 
 ```bash
 cd demo
-# Создай application-local.properties из application-local.properties.example
-# Укажи логин и пароль от PostgreSQL
+# Создай application-local.properties из src/main/resources/application-local.properties.example
+# Укажи логин и пароль от PostgreSQL (файл не коммитится)
 mvn spring-boot:run
 ```
 
 Подробности — в [demo/README.md](demo/README.md).
+
+## История коммитов
+
+- **Лабораторная работа №4** — Spring Security, CSRF, регистрация, роли, CRUD + бизнес-операции
+- **Лабораторная работа №3** — REST API, PostgreSQL, JPA, CRUD

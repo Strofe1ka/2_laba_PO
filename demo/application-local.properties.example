@@ -1,5 +1,0 @@
-# Скопируй этот файл как application-local.properties и укажи свои данные
-# application-local.properties не коммитится в git
-
-spring.datasource.username=postgres
-spring.datasource.password=ТВОЙ_ПАРОЛЬ

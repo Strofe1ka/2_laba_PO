@@ -1,17 +1,26 @@
-# Carsharing — Spring Boot + PostgreSQL + JPA
+# Лабораторная работа №4 — Carsharing API
 
-**Лабораторная работа №3** (PO3) — REST API для каршеринга
+**Предмет:** PO4  
+**Тема:** REST API каршеринга — Spring Boot, PostgreSQL, JPA, Spring Security, CSRF
 
 ## Project Topic
 
 Carsharing REST API — a system for managing car rentals, users, rides, and payments. Users can start rides with available cars, end rides (cost calculated by distance × 10), and pay for completed rides.
+
+## Security (Spring Security)
+
+- **Basic Auth** — все защищённые эндпоинты требуют заголовок `Authorization: Basic <base64(username:password)>`
+- **CSRF** — `CookieCsrfTokenRepository`, токен в заголовке `X-XSRF-TOKEN`. GET `/csrf-token` возвращает токен. `/register` и `/debug` без CSRF.
+- **Роли**: `USER`, `ADMIN`
+- **Регистрация** — `POST /register` (без авторизации). Первый зарегистрированный пользователь получает роль `ADMIN`
+- **Пароль** — минимум 8 символов, заглавная, строчная, цифра, спецсимвол
 
 ## Main Entities
 
 | Entity   | Description                                      |
 |----------|--------------------------------------------------|
 | **Car**  | Vehicle with brand, model, plate number, availability |
-| **User** | Customer with first name, last name, email       |
+| **User** | Customer with first name, last name, email, username, password, role |
 | **Ride** | Trip linking a user and a car, with start/end time, distance, cost |
 | **Payment** | Payment record for a ride, with amount and paid status |
 
@@ -29,7 +38,12 @@ Carsharing REST API — a system for managing car rentals, users, rides, and pay
 
 ## Available Endpoints
 
-### Cars
+### Регистрация (без авторизации)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/register` | Регистрация нового пользователя (роль USER; первый — ADMIN) |
+
+### Cars (GET — USER/ADMIN; POST/PUT/DELETE — ADMIN)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/cars` | Create car |
@@ -39,17 +53,17 @@ Carsharing REST API — a system for managing car rentals, users, rides, and pay
 | PUT | `/cars/{id}` | Update car |
 | DELETE | `/cars/{id}` | Delete car |
 
-### Users
+### Users (только ADMIN)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/users` | Create user |
+| POST | `/users` | Create user (username, password обязательны) |
 | GET | `/users` | Get all users |
 | GET | `/users/{id}` | Get user by ID |
 | GET | `/users/{id}/income` | Get user income (sum of paid rides) |
 | PUT | `/users/{id}` | Update user |
 | DELETE | `/users/{id}` | Delete user |
 
-### Rides
+### Rides (USER, ADMIN)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/rides` | Start ride |
@@ -59,7 +73,7 @@ Carsharing REST API — a system for managing car rentals, users, rides, and pay
 | POST | `/rides/{id}/pay` | Pay for ride |
 | DELETE | `/rides/{id}` | Delete ride |
 
-### Payments
+### Payments (USER, ADMIN)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/payments` | Create payment |
@@ -96,7 +110,8 @@ All operations that change multiple entities use `@Transactional`.
 
 ## Database Setup
 
-1. Start PostgreSQL.
+1. **Логин и пароль БД** — создай `src/main/resources/application-local.properties` из `application-local.properties.example` и укажи свои данные (файл в .gitignore).
+2. Start PostgreSQL.
 2. Create the database:
 ```sql
 CREATE DATABASE carsharing;
@@ -132,18 +147,32 @@ mvn clean package
 java -jar target/demo-0.0.1-SNAPSHOT.jar
 ```
 
-## Test Data
+## Первый запуск
 
-On first run, a `CommandLineRunner` loads:
+1. Запустите приложение
+2. Вызовите `POST /register` с телом:
+```json
+{
+  "firstName": "Админ",
+  "lastName": "Системы",
+  "email": "admin@carsharing.ru",
+  "username": "admin",
+  "password": "<ваш_пароль>"
+}
+```
+3. Первый пользователь получит роль ADMIN. Используйте `admin` / ваш пароль для Basic Auth в Postman.
 
-- 4 cars (Toyota Camry, Honda Civic, BMW X5, Mercedes E-Class)
-- 4 users
-- 3 rides (with start/end times and costs)
-- 3 payments (2 paid, 1 unpaid)
+## CSRF
+
+1. **Получить токен:** `GET /csrf-token` с Basic Auth → ответ `{"token":"...","headerName":"X-XSRF-TOKEN",...}`
+2. **Отправить с запросом:** заголовок `X-XSRF-TOKEN` с значением токена для POST/PUT/DELETE
+3. **Проверка:** без токена → 403 Forbidden; с токеном → запрос выполняется
 
 ## Postman
 
-Import `postman/Carsharing_API.postman_collection.json`:
+Import `postman/Carsharing.postman_collection.json`:
 
-- **Full Scenario** — Create entities → Start ride → End ride → Pay → Verify income and available cars
-- **Cars, Users, Rides, Payments** — CRUD and business operation requests with example bodies
+- **Регистрация и аутентификация** — регистрация без авторизации
+- **0. Получить CSRF токен** — выполните первым (после регистрации), сохраняет токен в переменную
+- **Full Scenario** — Create entities → Start ride → End ride → Pay → Verify
+- **Cars, Users, Rides, Payments** — CRUD. Environment: `authUsername`, `authPassword`, `userPassword`, `csrfToken` (заполняется автоматически)

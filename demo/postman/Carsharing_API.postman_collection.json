@@ -1,10 +1,47 @@
 {
   "info": {
     "name": "Carsharing API (Россия)",
-    "description": "CRUD и бизнес-операции каршеринга. Данные для России: номера, имена, почта.",
+    "description": "CRUD и бизнес-операции каршеринга. Spring Security: Basic Auth. Создайте Environment с переменными authUsername, authPassword, userPassword.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {"key": "authUsername", "value": "", "type": "string"},
+    {"key": "authPassword", "value": "", "type": "string"},
+    {"key": "userPassword", "value": "", "type": "string"}
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {"key": "username", "value": "{{authUsername}}", "type": "string"},
+      {"key": "password", "value": "{{authPassword}}", "type": "string"}
+    ]
+  },
   "item": [
+    {
+      "name": "Регистрация и аутентификация",
+      "item": [
+        {
+          "name": "Регистрация (без авторизации)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Админ\",\n  \"lastName\": \"Системы\",\n  \"email\": \"admin@carsharing.ru\",\n  \"username\": \"admin\",\n  \"password\": \"{{authPassword}}\"\n}"},
+            "url": "http://localhost:8080/register"
+          }
+        },
+        {
+          "name": "Регистрация пользователя (USER)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
+            "url": "http://localhost:8080/register"
+          }
+        }
+      ]
+    },
     {
       "name": "Полный сценарий",
       "description": "Создание сущностей → старт поездки → завершение → оплата → проверка",
@@ -19,11 +56,11 @@
           }
         },
         {
-          "name": "2. Создать пользователя",
+          "name": "2. Создать пользователя (ADMIN)",
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\"\n}"},
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "http://localhost:8080/users"
           }
         },
@@ -108,11 +145,11 @@
       "name": "Пользователи",
       "item": [
         {
-          "name": "Создать пользователя",
+          "name": "Создать пользователя (ADMIN)",
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\"\n}"},
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "http://localhost:8080/users"
           }
         },
@@ -121,7 +158,7 @@
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Мария\",\n  \"lastName\": \"Сидорова\",\n  \"email\": \"maria.sidorova@yandex.ru\"\n}"},
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Мария\",\n  \"lastName\": \"Сидорова\",\n  \"email\": \"maria.sidorova@yandex.ru\",\n  \"username\": \"maria\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "http://localhost:8080/users"
           }
         },
@@ -130,7 +167,7 @@
           "request": {
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Алексей\",\n  \"lastName\": \"Козлов\",\n  \"email\": \"alexey.kozlov@gmail.com\"\n}"},
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Алексей\",\n  \"lastName\": \"Козлов\",\n  \"email\": \"alexey.kozlov@gmail.com\",\n  \"username\": \"alexey\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "http://localhost:8080/users"
           }
         },
@@ -142,7 +179,7 @@
           "request": {
             "method": "PUT",
             "header": [{"key": "Content-Type", "value": "application/json"}],
-            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@yandex.ru\"\n}"},
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@yandex.ru\",\n  \"username\": \"ivan\"\n}"},
             "url": "http://localhost:8080/users/1"
           }
         },

@@ -32,5 +32,14 @@ build/
 ### VS Code ###
 .vscode/
 
-### Локальные секреты (логин/пароль БД) ###
+### Credentials / Secrets ###
+.env
+.env.*
+!.env.example
 application-local.properties
+application-*-local.properties
+*.postman_environment.json
+!*.postman_environment.example.json
+secrets/
+*.pem
+*.key

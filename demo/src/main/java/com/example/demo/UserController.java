@@ -17,8 +17,13 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ResponseEntity<?> createUser(@RequestBody User user) {
+        try {
+            User created = userService.createUser(user);
+            return ResponseEntity.status(201).body(created);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/users")
