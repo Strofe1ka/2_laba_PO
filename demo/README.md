@@ -1,5 +1,7 @@
 # Carsharing — Spring Boot + PostgreSQL + JPA
 
+**Лабораторная работа №3** (PO3) — REST API для каршеринга
+
 ## Project Topic
 
 Carsharing REST API — a system for managing car rentals, users, rides, and payments. Users can start rides with available cars, end rides (cost calculated by distance × 10), and pay for completed rides.
