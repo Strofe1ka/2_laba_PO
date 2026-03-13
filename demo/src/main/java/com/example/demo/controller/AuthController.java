@@ -1,32 +1,50 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.RefreshRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserRole;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.service.AuthTokenService;
 import com.example.demo.service.PasswordValidationService;
 import com.example.demo.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * Контроллер аутентификации и регистрации.
- * Подготовлено для будущей аутентификации по логину и паролю (сейчас используется Basic Auth).
  */
 @RestController
 public class AuthController {
     private final UserService userService;
+    private final UserRepository userRepository;
     private final PasswordValidationService passwordValidation;
+    private final AuthTokenService authTokenService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserService userService, PasswordValidationService passwordValidation) {
+    public AuthController(UserService userService, UserRepository userRepository,
+                          PasswordValidationService passwordValidation,
+                          AuthTokenService authTokenService, PasswordEncoder passwordEncoder) {
         this.userService = userService;
+        this.userRepository = userRepository;
         this.passwordValidation = passwordValidation;
+        this.authTokenService = authTokenService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @GetMapping("/")
+    public RedirectView home() {
+        return new RedirectView("/register");
     }
 
     @GetMapping(value = "/register", produces = MediaType.TEXT_HTML_VALUE)
@@ -87,19 +105,6 @@ public class AuthController {
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(html);
     }
 
-    /**
-     * Получить CSRF-токен для Postman. Вызовите с Basic Auth — токен вернётся в JSON.
-     * Добавьте заголовок X-XSRF-TOKEN с этим значением к POST/PUT/DELETE запросам.
-     */
-    @GetMapping("/csrf-token")
-    public Map<String, String> csrfToken(CsrfToken token) {
-        return Map.of(
-            "token", token.getToken(),
-            "headerName", token.getHeaderName(),
-            "parameterName", token.getParameterName()
-        );
-    }
-
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         List<String> passwordErrors = passwordValidation.validate(request.getPassword());
@@ -130,5 +135,46 @@ public class AuthController {
             "username", created.getUsername(),
             "message", "Регистрация успешна"
         ));
+    }
+
+    /**
+     * Аутентификация по логину и паролю. Возвращает пару access и refresh токенов.
+     */
+    @PostMapping("/auth/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        User user = userRepository.findByUsername(request.getUsername().trim())
+                .orElse(null);
+        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Неверный логин или пароль"));
+        }
+        String userAgent = httpRequest.getHeader("User-Agent");
+        String ipAddress = httpRequest.getRemoteAddr();
+        Map<String, String> tokens = authTokenService.createTokenPair(user, userAgent, ipAddress);
+        return ResponseEntity.ok(tokens);
+    }
+
+    /**
+     * Обновление пары токенов по refresh-токену.
+     * Старый refresh-токен после использования становится недействительным.
+     */
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request, HttpServletRequest httpRequest) {
+        try {
+            String userAgent = httpRequest.getHeader("User-Agent");
+            String ipAddress = httpRequest.getRemoteAddr();
+            Map<String, String> tokens = authTokenService.refreshTokens(
+                    request.getRefreshToken(), userAgent, ipAddress);
+            return ResponseEntity.ok(tokens);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (io.jsonwebtoken.JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Недействительный или истёкший refresh-токен"));
+        }
     }
 }

@@ -1,7 +1,7 @@
-# Лабораторная работа №4 — Carsharing API
+# Лабораторная работа №5 — Carsharing API
 
-**Предмет:** PO4  
-**Тема:** REST API каршеринга — Spring Boot, PostgreSQL, JPA, Spring Security, CSRF, Basic Auth
+**Предмет:** PO5  
+**Тема:** REST API каршеринга — Spring Boot, PostgreSQL, JPA, Spring Security, JWT, Basic Auth
 
 ## Структура проекта
 
@@ -21,5 +21,6 @@ mvn spring-boot:run
 
 ## История коммитов
 
+- **Лабораторная работа №5** — JWT, refresh tokens, сессии, расширенная аутентификация
 - **Лабораторная работа №4** — Spring Security, CSRF, регистрация, роли, CRUD + бизнес-операции
 - **Лабораторная работа №3** — REST API, PostgreSQL, JPA, CRUD

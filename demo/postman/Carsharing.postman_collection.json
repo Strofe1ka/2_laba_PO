@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Carsharing API",
-    "description": "REST API каршеринга. CSRF включён.\n\n1. Environment: baseUrl, authUsername, authPassword, userPassword\n2. Регистрация админа — No Auth\n3. Перед POST/PUT/DELETE — выполните «Получить CSRF токен» (сохраняет в csrfToken)\n4. /register и /debug не требуют CSRF",
+    "description": "REST API каршеринга.\n\n1. Environment: baseUrl, authUsername, authPassword, userPassword\n2. Регистрация — POST /register (первый = ADMIN)\n3. JWT: POST /auth/login → accessToken и refreshToken сохраняются автоматически\n4. Защищённые запросы используют Bearer {{accessToken}}\n5. POST /auth/refresh — обновление пары токенов",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -9,44 +9,19 @@
     {"key": "authUsername", "value": "", "type": "string"},
     {"key": "authPassword", "value": "", "type": "string"},
     {"key": "userPassword", "value": "", "type": "string"},
-    {"key": "csrfToken", "value": "", "type": "string"}
+    {"key": "accessToken", "value": "", "type": "string"},
+    {"key": "refreshToken", "value": "", "type": "string"},
+    {"key": "oldRefreshToken", "value": "", "type": "string"}
   ],
   "auth": {
-    "type": "basic",
-    "basic": [
-      {"key": "username", "value": "{{authUsername}}", "type": "string"},
-      {"key": "password", "value": "{{authPassword}}", "type": "string"}
+    "type": "bearer",
+    "bearer": [
+      {"key": "token", "value": "{{accessToken}}", "type": "string"}
     ]
   },
   "item": [
     {
-      "name": "0. Получить CSRF токен",
-      "item": [
-        {
-          "name": "Получить CSRF токен",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (pm.environment.name) pm.environment.set('csrfToken', json.token);",
-                  "pm.collectionVariables.set('csrfToken', json.token);"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "auth": {"type": "basic", "basic": [{"key": "username", "value": "{{authUsername}}", "type": "string"}, {"key": "password", "value": "{{authPassword}}", "type": "string"}]},
-            "method": "GET",
-            "url": "{{baseUrl}}/csrf-token"
-          }
-        }
-      ]
-    },
-    {
-      "name": "1. Регистрация",
+      "name": "0. Регистрация",
       "item": [
         {
           "name": "Регистрация (первый = ADMIN)",
@@ -77,13 +52,112 @@
       ]
     },
     {
+      "name": "1. JWT Аутентификация",
+      "description": "Сценарий: login → secure-test → refresh → повторный refresh (ошибка) → sessions",
+      "item": [
+        {
+          "name": "POST /auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('accessToken', json.accessToken);",
+                  "    pm.environment.set('refreshToken', json.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{authUsername}}\",\n  \"password\": \"{{authPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "GET /debug/secure-test (с access-токеном)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]},
+            "method": "GET",
+            "url": "{{baseUrl}}/debug/secure-test"
+          }
+        },
+        {
+          "name": "POST /auth/refresh",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set('oldRefreshToken', pm.environment.get('refreshToken') || '');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.environment.set('accessToken', json.accessToken);",
+                  "    pm.environment.set('refreshToken', json.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/refresh"
+          }
+        },
+        {
+          "name": "POST /auth/refresh (старый токен — ожидается 403)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{oldRefreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/refresh"
+          }
+        },
+        {
+          "name": "GET /debug/sessions (статусы в БД)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}]},
+            "method": "GET",
+            "url": "{{baseUrl}}/debug/sessions"
+          }
+        }
+      ]
+    },
+    {
       "name": "2. Полный сценарий",
       "description": "Создать авто → пользователя → начать поездку → завершить → оплатить",
       "auth": {
-        "type": "basic",
-        "basic": [
-          {"key": "username", "value": "{{authUsername}}", "type": "string"},
-          {"key": "password", "value": "{{authPassword}}", "type": "string"}
+        "type": "bearer",
+        "bearer": [
+          {"key": "token", "value": "{{accessToken}}", "type": "string"}
         ]
       },
       "item": [
@@ -91,7 +165,7 @@
           "name": "Создать автомобиль",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta\",\n  \"plateNumber\": \"А123ВС77\"\n}"},
             "url": "{{baseUrl}}/cars"
           }
@@ -100,7 +174,7 @@
           "name": "Создать пользователя",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "{{baseUrl}}/users"
           }
@@ -109,7 +183,7 @@
           "name": "Начать поездку",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"carId\": 1,\n  \"startTime\": \"10.03.2026 10:00\"\n}"},
             "url": "{{baseUrl}}/rides"
           }
@@ -118,14 +192,14 @@
           "name": "Завершить поездку",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"endTime\": \"10.03.2026 11:30\",\n  \"distance\": 25.5\n}"},
             "url": "{{baseUrl}}/rides/1/end"
           }
         },
         {
           "name": "Оплатить поездку",
-          "request": {"method": "POST", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/rides/1/pay"}
+          "request": {"method": "POST", "url": "{{baseUrl}}/rides/1/pay"}
         },
         {
           "name": "Доход пользователя",
@@ -136,10 +210,9 @@
     {
       "name": "Автомобили",
       "auth": {
-        "type": "basic",
-        "basic": [
-          {"key": "username", "value": "{{authUsername}}", "type": "string"},
-          {"key": "password", "value": "{{authPassword}}", "type": "string"}
+        "type": "bearer",
+        "bearer": [
+          {"key": "token", "value": "{{accessToken}}", "type": "string"}
         ]
       },
       "item": [
@@ -151,7 +224,7 @@
           "name": "Создать",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta\",\n  \"plateNumber\": \"А123ВС77\"\n}"},
             "url": "{{baseUrl}}/cars"
           }
@@ -160,21 +233,20 @@
           "name": "Обновить",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta SW\",\n  \"plateNumber\": \"А123ВС77\",\n  \"available\": true\n}"},
             "url": "{{baseUrl}}/cars/1"
           }
         },
-        {"name": "Удалить", "request": {"method": "DELETE", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/cars/1"}}
+        {"name": "Удалить", "request": {"method": "DELETE", "url": "{{baseUrl}}/cars/1"}}
       ]
     },
     {
       "name": "Пользователи",
       "auth": {
-        "type": "basic",
-        "basic": [
-          {"key": "username", "value": "{{authUsername}}", "type": "string"},
-          {"key": "password", "value": "{{authPassword}}", "type": "string"}
+        "type": "bearer",
+        "bearer": [
+          {"key": "token", "value": "{{accessToken}}", "type": "string"}
         ]
       },
       "item": [
@@ -185,7 +257,7 @@
           "name": "Создать",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
             "url": "{{baseUrl}}/users"
           }
@@ -194,21 +266,20 @@
           "name": "Обновить",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan@yandex.ru\",\n  \"username\": \"ivan\"\n}"},
             "url": "{{baseUrl}}/users/1"
           }
         },
-        {"name": "Удалить", "request": {"method": "DELETE", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/users/1"}}
+        {"name": "Удалить", "request": {"method": "DELETE", "url": "{{baseUrl}}/users/1"}}
       ]
     },
     {
       "name": "Поездки",
       "auth": {
-        "type": "basic",
-        "basic": [
-          {"key": "username", "value": "{{authUsername}}", "type": "string"},
-          {"key": "password", "value": "{{authPassword}}", "type": "string"}
+        "type": "bearer",
+        "bearer": [
+          {"key": "token", "value": "{{accessToken}}", "type": "string"}
         ]
       },
       "item": [
@@ -218,7 +289,7 @@
           "name": "Начать",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"carId\": 1,\n  \"startTime\": \"10.03.2026 10:00\"\n}"},
             "url": "{{baseUrl}}/rides"
           }
@@ -227,22 +298,21 @@
           "name": "Завершить",
           "request": {
             "method": "PUT",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"endTime\": \"10.03.2026 11:30\",\n  \"distance\": 25.5\n}"},
             "url": "{{baseUrl}}/rides/1/end"
           }
         },
-        {"name": "Оплатить", "request": {"method": "POST", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/rides/1/pay"}},
-        {"name": "Удалить", "request": {"method": "DELETE", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/rides/1"}}
+        {"name": "Оплатить", "request": {"method": "POST", "url": "{{baseUrl}}/rides/1/pay"}},
+        {"name": "Удалить", "request": {"method": "DELETE", "url": "{{baseUrl}}/rides/1"}}
       ]
     },
     {
       "name": "Платежи",
       "auth": {
-        "type": "basic",
-        "basic": [
-          {"key": "username", "value": "{{authUsername}}", "type": "string"},
-          {"key": "password", "value": "{{authPassword}}", "type": "string"}
+        "type": "bearer",
+        "bearer": [
+          {"key": "token", "value": "{{accessToken}}", "type": "string"}
         ]
       },
       "item": [
@@ -252,13 +322,13 @@
           "name": "Создать",
           "request": {
             "method": "POST",
-            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}],
+            "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"rideId\": 1\n}"},
             "url": "{{baseUrl}}/payments"
           }
         },
-        {"name": "Отметить оплаченным", "request": {"method": "PUT", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/payments/1/pay"}},
-        {"name": "Удалить", "request": {"method": "DELETE", "header": [{"key": "X-XSRF-TOKEN", "value": "{{csrfToken}}", "type": "text"}], "url": "{{baseUrl}}/payments/1"}}
+        {"name": "Отметить оплаченным", "request": {"method": "PUT", "url": "{{baseUrl}}/payments/1/pay"}},
+        {"name": "Удалить", "request": {"method": "DELETE", "url": "{{baseUrl}}/payments/1"}}
       ]
     }
   ]

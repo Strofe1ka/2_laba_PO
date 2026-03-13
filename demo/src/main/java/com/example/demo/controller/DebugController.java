@@ -4,7 +4,9 @@ import com.example.demo.dto.RideRequest;
 import com.example.demo.dto.RideResponse;
 import com.example.demo.entity.Car;
 import com.example.demo.entity.User;
+import com.example.demo.entity.UserSession;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.UserSessionRepository;
 import com.example.demo.service.CarService;
 import com.example.demo.service.RideService;
 import com.example.demo.service.UserService;
@@ -24,13 +26,17 @@ import java.util.Map;
 public class DebugController {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final UserSessionRepository userSessionRepository;
     private final CarService carService;
     private final UserService userService;
     private final RideService rideService;
 
-    public DebugController(PasswordEncoder passwordEncoder, UserRepository userRepository, CarService carService, UserService userService, RideService rideService) {
+    public DebugController(PasswordEncoder passwordEncoder, UserRepository userRepository,
+                           UserSessionRepository userSessionRepository, CarService carService,
+                           UserService userService, RideService rideService) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
+        this.userSessionRepository = userSessionRepository;
         this.carService = carService;
         this.userService = userService;
         this.rideService = rideService;
@@ -50,8 +56,8 @@ public class DebugController {
     }
 
     /**
-     * Тест: требует Basic Auth. Если вернёт "ok" — авторизация работает.
-     * GET /debug/secure-test — с заголовком Authorization: Basic YWRtaW46QWRtaW4xMjMh
+     * Тест: требует JWT. Если вернёт "ok" — авторизация работает.
+     * GET /debug/secure-test — с заголовком Authorization: Bearer &lt;accessToken&gt;
      */
     @GetMapping("/secure-test")
     public Map<String, String> secureTest() {
@@ -149,6 +155,29 @@ public class DebugController {
             "authorization", auth != null ? auth : "ОТСУТСТВУЕТ",
             "contentType", contentType != null ? contentType : "ОТСУТСТВУЕТ",
             "authLength", auth != null ? auth.length() : 0
+        );
+    }
+
+    /**
+     * Список сессий в БД (для проверки статусов).
+     * GET /debug/sessions — с JWT access-токеном
+     */
+    @GetMapping("/sessions")
+    public List<Map<String, Object>> getSessions() {
+        return userSessionRepository.findAll().stream()
+                .map(this::sessionToMap)
+                .toList();
+    }
+
+    private Map<String, Object> sessionToMap(UserSession s) {
+        return Map.of(
+                "id", s.getId(),
+                "userId", s.getUser().getId(),
+                "username", s.getUser().getUsername(),
+                "status", s.getStatus().name(),
+                "createdAt", s.getCreatedAt().toString(),
+                "expiresAt", s.getExpiresAt().toString(),
+                "revokedAt", s.getRevokedAt() != null ? s.getRevokedAt().toString() : "null"
         );
     }
 

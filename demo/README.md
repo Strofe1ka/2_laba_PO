@@ -1,7 +1,10 @@
-# Лабораторная работа №4 — Carsharing API
+# Лабораторная работа №5
 
-**Предмет:** PO4  
-**Тема:** REST API каршеринга — Spring Boot, PostgreSQL, JPA, Spring Security, CSRF
+**Тема:** Carsharing REST API — Spring Boot + PostgreSQL + JPA + Spring Security
+
+---
+
+# Carsharing — Spring Boot + PostgreSQL + JPA + Spring Security
 
 ## Project Topic
 
@@ -10,7 +13,7 @@ Carsharing REST API — a system for managing car rentals, users, rides, and pay
 ## Security (Spring Security)
 
 - **Basic Auth** — все защищённые эндпоинты требуют заголовок `Authorization: Basic <base64(username:password)>`
-- **CSRF** — `CookieCsrfTokenRepository`, токен в заголовке `X-XSRF-TOKEN`. GET `/csrf-token` возвращает токен. `/register` и `/debug` без CSRF.
+- **CSRF** — настроен `CookieCsrfTokenRepository` (при Basic Auth токен не требуется)
 - **Роли**: `USER`, `ADMIN`
 - **Регистрация** — `POST /register` (без авторизации). Первый зарегистрированный пользователь получает роль `ADMIN`
 - **Пароль** — минимум 8 символов, заглавная, строчная, цифра, спецсимвол
@@ -110,9 +113,9 @@ All operations that change multiple entities use `@Transactional`.
 
 ## Database Setup
 
-1. **Логин и пароль БД** — создай `src/main/resources/application-local.properties` из `application-local.properties.example` и укажи свои данные (файл в .gitignore).
+1. Скопируйте `src/main/resources/application-local.properties.example` в `application-local.properties` и укажите пароль БД (файл в .gitignore).
 2. Start PostgreSQL.
-2. Create the database:
+3. Create the database:
 ```sql
 CREATE DATABASE carsharing;
 ```
@@ -162,17 +165,10 @@ java -jar target/demo-0.0.1-SNAPSHOT.jar
 ```
 3. Первый пользователь получит роль ADMIN. Используйте `admin` / ваш пароль для Basic Auth в Postman.
 
-## CSRF
-
-1. **Получить токен:** `GET /csrf-token` с Basic Auth → ответ `{"token":"...","headerName":"X-XSRF-TOKEN",...}`
-2. **Отправить с запросом:** заголовок `X-XSRF-TOKEN` с значением токена для POST/PUT/DELETE
-3. **Проверка:** без токена → 403 Forbidden; с токеном → запрос выполняется
-
 ## Postman
 
-Import `postman/Carsharing.postman_collection.json`:
+Import `postman/Carsharing_API.postman_collection.json`:
 
 - **Регистрация и аутентификация** — регистрация без авторизации
-- **0. Получить CSRF токен** — выполните первым (после регистрации), сохраняет токен в переменную
-- **Full Scenario** — Create entities → Start ride → End ride → Pay → Verify
-- **Cars, Users, Rides, Payments** — CRUD. Environment: `authUsername`, `authPassword`, `userPassword`, `csrfToken` (заполняется автоматически)
+- **Full Scenario** — Create entities → Start ride → End ride → Pay → Verify (требуется Basic Auth)
+- **Cars, Users, Rides, Payments** — CRUD с Basic Auth. Создайте Postman Environment с переменными `authUsername`, `authPassword`, `userPassword`.

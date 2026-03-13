@@ -1,5 +1,3 @@
-# Скопируй как application-local.properties и укажи свои данные.
-# application-local.properties в .gitignore — не попадёт в репозиторий.
-
-spring.datasource.username=postgres
-spring.datasource.password=ТВОЙ_ПАРОЛЬ
+# Локальные настройки — скопируйте в application-local.properties (в .gitignore)
+# Укажите пароль PostgreSQL — тот же, что используете в pgAdmin
+spring.datasource.password=YOUR_DB_PASSWORD
