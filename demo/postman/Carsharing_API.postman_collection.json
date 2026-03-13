@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Carsharing API (Россия)",
-    "description": "CRUD и бизнес-операции каршеринга. Spring Security: Basic Auth. Создайте Environment с переменными authUsername, authPassword, userPassword.",
+    "description": "CRUD и бизнес-операции каршеринга. Spring Security: Basic Auth. Создайте Environment с переменными authUsername, authPassword, userPassword.\n\nTLS: для самоподписанного сертификата отключите Settings → SSL certificate verification.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -27,7 +27,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Админ\",\n  \"lastName\": \"Системы\",\n  \"email\": \"admin@carsharing.ru\",\n  \"username\": \"admin\",\n  \"password\": \"{{authPassword}}\"\n}"},
-            "url": "http://localhost:8080/register"
+            "url": "https://localhost:8443/register"
           }
         },
         {
@@ -37,7 +37,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
-            "url": "http://localhost:8080/register"
+            "url": "https://localhost:8443/register"
           }
         }
       ]
@@ -52,7 +52,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta\",\n  \"plateNumber\": \"А123ВС77\"\n}"},
-            "url": "http://localhost:8080/cars"
+            "url": "https://localhost:8443/cars"
           }
         },
         {
@@ -61,7 +61,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
-            "url": "http://localhost:8080/users"
+            "url": "https://localhost:8443/users"
           }
         },
         {
@@ -70,7 +70,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"carId\": 1,\n  \"startTime\": \"28.02.2025 10:00\"\n}"},
-            "url": "http://localhost:8080/rides"
+            "url": "https://localhost:8443/rides"
           }
         },
         {
@@ -79,20 +79,20 @@
             "method": "PUT",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"endTime\": \"28.02.2025 11:30\",\n  \"distance\": 25.5\n}"},
-            "url": "http://localhost:8080/rides/1/end"
+            "url": "https://localhost:8443/rides/1/end"
           }
         },
         {
           "name": "5. Оплатить поездку",
-          "request": {"method": "POST", "url": "http://localhost:8080/rides/1/pay"}
+          "request": {"method": "POST", "url": "https://localhost:8443/rides/1/pay"}
         },
         {
           "name": "6. Проверить доход пользователя",
-          "request": {"method": "GET", "url": "http://localhost:8080/users/1/income"}
+          "request": {"method": "GET", "url": "https://localhost:8443/users/1/income"}
         },
         {
           "name": "7. Список доступных авто",
-          "request": {"method": "GET", "url": "http://localhost:8080/cars/available"}
+          "request": {"method": "GET", "url": "https://localhost:8443/cars/available"}
         }
       ]
     },
@@ -105,7 +105,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta\",\n  \"plateNumber\": \"А123ВС77\"\n}"},
-            "url": "http://localhost:8080/cars"
+            "url": "https://localhost:8443/cars"
           }
         },
         {
@@ -114,7 +114,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Hyundai\",\n  \"model\": \"Solaris\",\n  \"plateNumber\": \"В456ХЕ77\"\n}"},
-            "url": "http://localhost:8080/cars"
+            "url": "https://localhost:8443/cars"
           }
         },
         {
@@ -123,22 +123,22 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Kia\",\n  \"model\": \"Rio\",\n  \"plateNumber\": \"С789МН77\"\n}"},
-            "url": "http://localhost:8080/cars"
+            "url": "https://localhost:8443/cars"
           }
         },
-        {"name": "Получить все автомобили", "request": {"method": "GET", "url": "http://localhost:8080/cars"}},
-        {"name": "Получить доступные автомобили", "request": {"method": "GET", "url": "http://localhost:8080/cars/available"}},
-        {"name": "Получить автомобиль по ID", "request": {"method": "GET", "url": "http://localhost:8080/cars/1"}},
+        {"name": "Получить все автомобили", "request": {"method": "GET", "url": "https://localhost:8443/cars"}},
+        {"name": "Получить доступные автомобили", "request": {"method": "GET", "url": "https://localhost:8443/cars/available"}},
+        {"name": "Получить автомобиль по ID", "request": {"method": "GET", "url": "https://localhost:8443/cars/1"}},
         {
           "name": "Обновить автомобиль",
           "request": {
             "method": "PUT",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"brand\": \"Lada\",\n  \"model\": \"Vesta SW\",\n  \"plateNumber\": \"А123ВС77\",\n  \"available\": true\n}"},
-            "url": "http://localhost:8080/cars/1"
+            "url": "https://localhost:8443/cars/1"
           }
         },
-        {"name": "Удалить автомобиль", "request": {"method": "DELETE", "url": "http://localhost:8080/cars/1"}}
+        {"name": "Удалить автомобиль", "request": {"method": "DELETE", "url": "https://localhost:8443/cars/1"}}
       ]
     },
     {
@@ -150,7 +150,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@mail.ru\",\n  \"username\": \"ivan\",\n  \"password\": \"{{userPassword}}\"\n}"},
-            "url": "http://localhost:8080/users"
+            "url": "https://localhost:8443/users"
           }
         },
         {
@@ -159,7 +159,7 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Мария\",\n  \"lastName\": \"Сидорова\",\n  \"email\": \"maria.sidorova@yandex.ru\",\n  \"username\": \"maria\",\n  \"password\": \"{{userPassword}}\"\n}"},
-            "url": "http://localhost:8080/users"
+            "url": "https://localhost:8443/users"
           }
         },
         {
@@ -168,22 +168,22 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Алексей\",\n  \"lastName\": \"Козлов\",\n  \"email\": \"alexey.kozlov@gmail.com\",\n  \"username\": \"alexey\",\n  \"password\": \"{{userPassword}}\"\n}"},
-            "url": "http://localhost:8080/users"
+            "url": "https://localhost:8443/users"
           }
         },
-        {"name": "Получить всех пользователей", "request": {"method": "GET", "url": "http://localhost:8080/users"}},
-        {"name": "Получить пользователя по ID", "request": {"method": "GET", "url": "http://localhost:8080/users/1"}},
-        {"name": "Получить доход пользователя", "request": {"method": "GET", "url": "http://localhost:8080/users/1/income"}},
+        {"name": "Получить всех пользователей", "request": {"method": "GET", "url": "https://localhost:8443/users"}},
+        {"name": "Получить пользователя по ID", "request": {"method": "GET", "url": "https://localhost:8443/users/1"}},
+        {"name": "Получить доход пользователя", "request": {"method": "GET", "url": "https://localhost:8443/users/1/income"}},
         {
           "name": "Обновить пользователя",
           "request": {
             "method": "PUT",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Иван\",\n  \"lastName\": \"Петров\",\n  \"email\": \"ivan.petrov@yandex.ru\",\n  \"username\": \"ivan\"\n}"},
-            "url": "http://localhost:8080/users/1"
+            "url": "https://localhost:8443/users/1"
           }
         },
-        {"name": "Удалить пользователя", "request": {"method": "DELETE", "url": "http://localhost:8080/users/1"}}
+        {"name": "Удалить пользователя", "request": {"method": "DELETE", "url": "https://localhost:8443/users/1"}}
       ]
     },
     {
@@ -195,22 +195,22 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"userId\": 1,\n  \"carId\": 1,\n  \"startTime\": \"28.02.2025 10:00\"\n}"},
-            "url": "http://localhost:8080/rides"
+            "url": "https://localhost:8443/rides"
           }
         },
-        {"name": "Получить все поездки", "request": {"method": "GET", "url": "http://localhost:8080/rides"}},
-        {"name": "Получить поездку по ID", "request": {"method": "GET", "url": "http://localhost:8080/rides/1"}},
+        {"name": "Получить все поездки", "request": {"method": "GET", "url": "https://localhost:8443/rides"}},
+        {"name": "Получить поездку по ID", "request": {"method": "GET", "url": "https://localhost:8443/rides/1"}},
         {
           "name": "Завершить поездку",
           "request": {
             "method": "PUT",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"endTime\": \"28.02.2025 11:30\",\n  \"distance\": 25.5\n}"},
-            "url": "http://localhost:8080/rides/1/end"
+            "url": "https://localhost:8443/rides/1/end"
           }
         },
-        {"name": "Оплатить поездку", "request": {"method": "POST", "url": "http://localhost:8080/rides/1/pay"}},
-        {"name": "Удалить поездку", "request": {"method": "DELETE", "url": "http://localhost:8080/rides/1"}}
+        {"name": "Оплатить поездку", "request": {"method": "POST", "url": "https://localhost:8443/rides/1/pay"}},
+        {"name": "Удалить поездку", "request": {"method": "DELETE", "url": "https://localhost:8443/rides/1"}}
       ]
     },
     {
@@ -222,13 +222,13 @@
             "method": "POST",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {"mode": "raw", "raw": "{\n  \"rideId\": 1\n}"},
-            "url": "http://localhost:8080/payments"
+            "url": "https://localhost:8443/payments"
           }
         },
-        {"name": "Получить все платежи", "request": {"method": "GET", "url": "http://localhost:8080/payments"}},
-        {"name": "Получить платёж по ID", "request": {"method": "GET", "url": "http://localhost:8080/payments/1"}},
-        {"name": "Отметить платёж оплаченным", "request": {"method": "PUT", "url": "http://localhost:8080/payments/1/pay"}},
-        {"name": "Удалить платёж", "request": {"method": "DELETE", "url": "http://localhost:8080/payments/1"}}
+        {"name": "Получить все платежи", "request": {"method": "GET", "url": "https://localhost:8443/payments"}},
+        {"name": "Получить платёж по ID", "request": {"method": "GET", "url": "https://localhost:8443/payments/1"}},
+        {"name": "Отметить платёж оплаченным", "request": {"method": "PUT", "url": "https://localhost:8443/payments/1/pay"}},
+        {"name": "Удалить платёж", "request": {"method": "DELETE", "url": "https://localhost:8443/payments/1"}}
       ]
     }
   ]

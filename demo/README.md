@@ -1,10 +1,7 @@
-# Лабораторная работа №5
+# Лабораторная работа №6 — Carsharing API
 
-**Тема:** Carsharing REST API — Spring Boot + PostgreSQL + JPA + Spring Security
-
----
-
-# Carsharing — Spring Boot + PostgreSQL + JPA + Spring Security
+**Предмет:** PO6  
+**Тема:** TLS/HTTPS, цепочка сертификатов, CI/CD
 
 ## Project Topic
 
@@ -95,6 +92,77 @@ Carsharing REST API — a system for managing car rentals, users, rides, and pay
 
 All operations that change multiple entities use `@Transactional`.
 
+## TLS / HTTPS
+
+Сервис работает по **HTTPS** (порт 8443). Для локальной разработки необходимо сгенерировать цепочку сертификатов.
+
+### Генерация сертификатов
+
+1. Установите OpenSSL (входит в Git for Windows или установите отдельно).
+2. Выполните скрипт, указав **номер студенческого билета**:
+
+```powershell
+# Из корня репозитория:
+.\demo\scripts\generate-certificates.ps1 -StudentId "12345678"
+
+# Или из папки demo:
+cd demo
+.\scripts\generate-certificates.ps1 -StudentId "12345678"
+```
+
+3. Пароль keystore сохранится в `certs\.keystore-password`. Добавьте в `application-local.properties` (или в переменные окружения):
+
+```properties
+SSL_KEY_STORE_PASSWORD=<пароль из certs\.keystore-password>
+```
+
+### Добавление Root CA в доверенные (браузер)
+
+Чтобы браузер не показывал предупреждение о самоподписанном сертификате:
+
+**Windows:**
+1. Дважды щёлкните `certs/root/carsharing-root-ca.crt`
+2. «Установить сертификат» → «Текущий пользователь» или «Локальный компьютер»
+3. «Поместить все сертификаты в следующее хранилище» → «Доверенные корневые центры сертификации»
+4. Завершите мастер
+
+**Chrome/Edge:** используют хранилище Windows, после установки Root CA перезапустите браузер.
+
+### Переменные TLS
+
+| Variable | Description |
+|----------|-------------|
+| `SSL_KEY_STORE_PATH` | Путь к keystore (по умолчанию `file:./certs/carsharing-keystore.p12`) |
+| `SSL_KEY_STORE_PASSWORD` | Пароль keystore (**не коммитить!**) |
+
+---
+
+## CI (GitHub Actions)
+
+Workflow `.github/workflows/ci.yml` (в корне репозитория) выполняет:
+- компиляцию
+- тестирование (с PostgreSQL)
+- упаковку JAR
+- загрузку артефакта
+
+### GitHub Secrets (для smoke-test с TLS)
+
+Для ручного запуска smoke-test с HTTPS добавьте в **Settings → Secrets and variables → Actions**:
+
+| Secret | Описание |
+|--------|----------|
+| `KEYSTORE_BASE64` | Base64 содержимого `certs/carsharing-keystore.p12` |
+| `KEYSTORE_PASSWORD` | Пароль keystore |
+
+**Получение base64 (PowerShell):**
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\certs\carsharing-keystore.p12"))
+```
+
+⚠️ **Не допускайте утечки** паролей, ключей, keystore и сертификатов в репозиторий!
+
+---
+
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -113,9 +181,8 @@ All operations that change multiple entities use `@Transactional`.
 
 ## Database Setup
 
-1. Скопируйте `src/main/resources/application-local.properties.example` в `application-local.properties` и укажите пароль БД (файл в .gitignore).
-2. Start PostgreSQL.
-3. Create the database:
+1. Start PostgreSQL.
+2. Create the database:
 ```sql
 CREATE DATABASE carsharing;
 ```
@@ -140,11 +207,15 @@ $env:DB_PASSWORD="postgres"
 
 ## Running the Project
 
+**Требуется:** сгенерированные сертификаты и `SSL_KEY_STORE_PASSWORD` в `application-local.properties` или в переменных окружения.
+
 ```bash
 mvn spring-boot:run
 ```
 
-Or build and run the JAR:
+Приложение будет доступно по **https://localhost:8443**
+
+Или сборка и запуск JAR:
 ```bash
 mvn clean package
 java -jar target/demo-0.0.1-SNAPSHOT.jar

@@ -43,3 +43,9 @@ application-*-local.properties
 secrets/
 *.pem
 *.key
+*.crt
+*.csr
+*.p12
+*.jks
+certs/
+.keystore-password

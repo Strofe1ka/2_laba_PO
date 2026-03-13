@@ -1,11 +1,11 @@
 {
   "info": {
     "name": "Carsharing API",
-    "description": "REST API каршеринга.\n\n1. Environment: baseUrl, authUsername, authPassword, userPassword\n2. Регистрация — POST /register (первый = ADMIN)\n3. JWT: POST /auth/login → accessToken и refreshToken сохраняются автоматически\n4. Защищённые запросы используют Bearer {{accessToken}}\n5. POST /auth/refresh — обновление пары токенов",
+    "description": "REST API каршеринга.\n\n1. Environment: baseUrl (https://localhost:8443), authUsername, authPassword, userPassword\n2. Регистрация — POST /register (первый = ADMIN)\n3. JWT: POST /auth/login → accessToken и refreshToken сохраняются автоматически\n4. Защищённые запросы используют Bearer {{accessToken}}\n5. POST /auth/refresh — обновление пары токенов\n\nTLS: для самоподписанного сертификата отключите Settings → SSL certificate verification.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {"key": "baseUrl", "value": "http://localhost:8080", "type": "string"},
+    {"key": "baseUrl", "value": "https://localhost:8443", "type": "string"},
     {"key": "authUsername", "value": "", "type": "string"},
     {"key": "authPassword", "value": "", "type": "string"},
     {"key": "userPassword", "value": "", "type": "string"},

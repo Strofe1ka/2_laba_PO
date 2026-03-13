@@ -1,1 +1,4 @@
 push-to-github.ps1
+
+# Сертификаты и keystore (не коммитить!)
+certs/

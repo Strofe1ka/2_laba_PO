@@ -1,0 +1,119 @@
+# CI: компиляция, тестирование, упаковка, загрузка артефакта
+# Keystore и пароль — через GitHub Secrets (KEYSTORE_BASE64, KEYSTORE_PASSWORD)
+# Никогда не логировать и не загружать секреты!
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:  # Ручной запуск для smoke-test-tls (требует Secrets)
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: carsharing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and Test
+        working-directory: demo
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: carsharing
+          DB_PASSWORD: postgres
+          JWT_SECRET: test-jwt-secret-for-ci-must-be-at-least-32-characters-long
+        run: mvn -B clean verify
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: carsharing-app
+          path: demo/target/demo-*.jar
+
+  smoke-test-tls:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'workflow_dispatch'
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: carsharing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: carsharing-app
+
+      - name: Restore keystore from secret
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.p12
+          if [ ! -s keystore.p12 ]; then
+            echo "Ошибка: KEYSTORE_BASE64 не задан. Добавьте секрет в Settings -> Secrets"
+            exit 1
+          fi
+
+      - name: Run app with TLS
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: carsharing
+          DB_PASSWORD: postgres
+          JWT_SECRET: test-jwt-secret-for-ci-must-be-at-least-32-characters-long
+          SSL_KEY_STORE_PATH: file:${{ github.workspace }}/keystore.p12
+          SSL_KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          JAR=$(ls demo-*.jar | head -1)
+          java -jar "$JAR" &
+          sleep 20
+          STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/ || echo "000")
+          echo "HTTP: $STATUS"
