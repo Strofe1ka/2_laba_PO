@@ -1,4 +1,10 @@
-push-to-github.ps1
-
 # Сертификаты и keystore (не коммитить!)
 certs/
+*.p12
+*.pem
+*.key
+
+# Локальные настройки с паролями
+**/application-local.properties
+**/*.postman_environment.json
+!**/*.postman_environment.example.json

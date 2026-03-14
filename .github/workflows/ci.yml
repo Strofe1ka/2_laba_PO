@@ -1,6 +1,5 @@
 # CI: компиляция, тестирование, упаковка, загрузка артефакта
 # Keystore и пароль — через GitHub Secrets (KEYSTORE_BASE64, KEYSTORE_PASSWORD)
-# Никогда не логировать и не загружать секреты!
 
 name: CI
 
@@ -9,7 +8,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-  workflow_dispatch:  # Ручной запуск для smoke-test-tls (требует Secrets)
+  workflow_dispatch:
 
 env:
   JAVA_VERSION: '17'
@@ -33,11 +32,9 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
@@ -53,8 +50,7 @@ jobs:
           JWT_SECRET: test-jwt-secret-for-ci-must-be-at-least-32-characters-long
         run: mvn -B clean verify
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: carsharing-app
           path: demo/target/demo-*.jar
@@ -62,7 +58,6 @@ jobs:
   smoke-test-tls:
     runs-on: ubuntu-latest
     needs: build-and-test
-    if: github.event_name == 'workflow_dispatch'
     services:
       postgres:
         image: postgres:15
@@ -79,18 +74,15 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: carsharing-app
 
@@ -98,7 +90,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.p12
           if [ ! -s keystore.p12 ]; then
-            echo "Ошибка: KEYSTORE_BASE64 не задан. Добавьте секрет в Settings -> Secrets"
+            echo "ERROR: Add KEYSTORE_BASE64 in Settings -> Secrets -> Actions"
             exit 1
           fi
 
@@ -114,6 +106,7 @@ jobs:
         run: |
           JAR=$(ls demo-*.jar | head -1)
           java -jar "$JAR" &
-          sleep 20
+          sleep 25
           STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/ || echo "000")
-          echo "HTTP: $STATUS"
+          echo "HTTPS status: $STATUS"
+          if [ "$STATUS" = "000" ]; then exit 1; fi
